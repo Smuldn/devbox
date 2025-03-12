@@ -1,7 +1,16 @@
+terraform {
+    backend "azurerm" {
+        resource_group_name   = "tfstate"
+        storage_account_name  = "tfstate-storage-account"
+        container_name        = "yourcontainer"
+        key                   = "terraform.tfstate"
+    }
+}
 provider "azurerm" {
     features {}
     subscription_id = "35fa58b6-f21a-4a97-91db-c07b0b3ff601"
 }
+
 variable "resource_group_name" {
     description = "The name of the resource group"
     type        = string

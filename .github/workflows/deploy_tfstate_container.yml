@@ -1,0 +1,23 @@
+name: Deploy TFState Container
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Azure PowerShell
+      uses: azure/powershell@v1
+      with:
+        azure-version: 'latest'
+
+    - name: Run deployment script
+      run: ./create_tfstate_container.ps1
+      shell: pwsh
