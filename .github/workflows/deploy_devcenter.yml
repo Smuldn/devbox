@@ -1,0 +1,36 @@
+name: Deploy DevCenter Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0
+
+      - name: Initialize Terraform
+        working-directory: /devbox/templates
+        run: terraform init
+
+      - name: Plan Terraform
+        working-directory: /devbox/templates
+        run: terraform plan -var-file=../parameters/devcenter.tfvars
+
+      - name: Apply Terraform
+        if: github.ref == 'refs/heads/main'
+        working-directory: /devbox/templates
+        run: terraform apply -var-file=../parameters/devcenter.tfvars -auto-approve
