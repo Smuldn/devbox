@@ -1,5 +1,6 @@
 provider "azurerm" {
     features {}
+    subscription_id = "35fa58b6-f21a-4a97-91db-c07b0b3ff601"
 }
 
 data "terraform_remote_state" "parameters" {
