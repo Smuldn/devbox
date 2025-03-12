@@ -53,11 +53,12 @@ resource "azurerm_dev_center_project" "devcenter_project" {
     location            = azurerm_resource_group.devcenter_rg.location
 }
 
-resource "azurerm_dev_center_pool" "devcenter_pool" {
-    name                = var.dev_center_pool_name
-    project_id          = azurerm_dev_center_project.devcenter_project.id
-    resource_group_name = azurerm_resource_group.devcenter_rg.name
-    location            = azurerm_resource_group.devcenter_rg.location
-    sku_name            = "Standard_DS1_v2"
-    os_type             = "Windows"
+resource "azurerm_dev_center_project_pool" "devcenter_pool" {
+    name                                    = var.dev_center_pool_name
+    location                                = azurerm_resource_group.devcenter_rg.location
+    dev_center_project_id                   = azurerm_dev_center_project.devcenter_project.id
+    dev_box_definition_name                 = azurerm_dev_center_dev_box_definition.example.name
+    local_administrator_enabled             = true
+    dev_center_attached_network_name        = azurerm_dev_center_attached_network.example.name
+    stop_on_disconnect_grace_period_minutes = 60
 }
