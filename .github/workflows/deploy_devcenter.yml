@@ -22,25 +22,31 @@ jobs:
       run:
         working-directory: ./templates
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Terraform Init
         id: init
-        run: |
-          terraform init
+        run: terraform init
+
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check -recursive
         continue-on-error: true
+
       - name: Terraform Plan
         id: plan
         run: terraform plan -var-file=../parameters/devcenter.tfvars -out tfplan
-        continue-on-error: false
+
       - name: Publish Terraform Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: tfplan
+
       - name: Create String Output
         id: tf-plan-string
         run: |
@@ -55,13 +61,15 @@ jobs:
           echo '```' >> $GITHUB_OUTPUT
           echo "</details>" >> $GITHUB_OUTPUT
           echo "${delimiter}" >> $GITHUB_OUTPUT
+
       - name: Publish Terraform Plan to Task Summary
         env:
           SUMMARY: ${{ steps.tf-plan-string.outputs.summary }}
-        run: |
-          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+        run: echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
+
       - name: Terraform Apply
         run: terraform apply -var-file=../parameters/devcenter.tfvars -auto-approve
