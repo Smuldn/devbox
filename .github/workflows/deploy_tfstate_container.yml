@@ -13,11 +13,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up Azure PowerShell
-      uses: azure/powershell@v1
+    - name: Run Azure Powershell Script
+      uses: azure/powershell@v2
       with:
-        azure-version: 'latest'
+        inlineScript: ./scripts/create_tfstate_container.ps1
+        azPSVersion: "latest"
 
-    - name: Run deployment script
-      run: ./create_tfstate_container.ps1
-      shell: pwsh
