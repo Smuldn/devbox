@@ -28,11 +28,6 @@ jobs:
         with:
           terraform_version: 1.0.0
 
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ env.AZURE_SUBSCRIPTION_ID }}
-
       - name: Initialize Terraform
         working-directory: ./templates
         run: terraform init
