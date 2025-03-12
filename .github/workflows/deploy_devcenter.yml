@@ -1,6 +1,13 @@
 name: Deploy DevCenter Infrastructure
 
+env:
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -8,35 +15,53 @@ on:
     branches:
       - main
 
-env:
-  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-
 jobs:
-  terraform:
-    name: Terraform
+  build:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./templates
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -var-file=../parameters/devcenter.tfvars -out tfplan
+        continue-on-error: false
+      - name: Publish Terraform Plan
+        uses: actions/upload-artifact@v4
         with:
-          terraform_version: 1.0.0
-
-      - name: Initialize Terraform
-        working-directory: ./templates
-        run: terraform init
-
-      - name: Plan Terraform
-        working-directory: ./templates
-        run: terraform plan -var-file=../parameters/devcenter.tfvars
-
-      - name: Apply Terraform
-        if: github.ref == 'refs/heads/main'
-        working-directory: ./templates
+          name: tfplan
+          path: tfplan
+      - name: Create String Output
+        id: tf-plan-string
+        run: |
+          TERRAFORM_PLAN=$(terraform show -no-color tfplan)
+          delimiter="$(openssl rand -hex 8)"
+          echo "summary<<${delimiter}" >> $GITHUB_OUTPUT
+          echo "## Terraform Plan Output" >> $GITHUB_OUTPUT
+          echo "<details><summary>Click to expand</summary>" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo '```terraform' >> $GITHUB_OUTPUT
+          echo "$TERRAFORM_PLAN" >> $GITHUB_OUTPUT
+          echo '```' >> $GITHUB_OUTPUT
+          echo "</details>" >> $GITHUB_OUTPUT
+          echo "${delimiter}" >> $GITHUB_OUTPUT
+      - name: Publish Terraform Plan to Task Summary
+        env:
+          SUMMARY: ${{ steps.tf-plan-string.outputs.summary }}
+        run: |
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+      - name: Terraform Apply
         run: terraform apply -var-file=../parameters/devcenter.tfvars -auto-approve
